@@ -37,7 +37,7 @@ async function setEventStart(  ) {
 }
 
 function getMsgs() {        
-    request(baseuri+'/GetEvents?deviceObject=202&gsSession='+mySessionID, (err,resp,body)=>{
+    request(baseuri+'/GetEvents?deviceObject='+config.extension+'&gsSession='+mySessionID, (err,resp,body)=>{
         if( err) console.log('error:', err)
 
         if(body && (body.charAt(0)==='{'))  {
