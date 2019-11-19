@@ -1,6 +1,6 @@
 "use strict";
 
-const request = require('request-promise-native')
+const request = require('request-promise-native').defaults({ rejectUnauthorized: false })
 const xparser = require('fast-xml-parser')
 const config = require('./config.json')
 const lokalnumre = require('./lokalnumre.json')
