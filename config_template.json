@@ -1,0 +1,8 @@
+{
+    "extension" : "202",
+    "password"   : "password" ,
+    "systemURI" : "http://10.10.10.10:8801",    
+    "maxNumbers" : 5
+    
+
+}
