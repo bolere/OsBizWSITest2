@@ -25,15 +25,18 @@ async function loginA() {
 async function setEventStart(  ) {    
     let ant = config.maxNumbers ? config.maxNumbers : lokalnumre.numre.length
     if( ant > lokalnumre.numre.length ) ant = lokalnumre.numre.length
+    let numlist = ''
     for(let np=0; np<ant; np++) {
         let num = lokalnumre.numre[np]
-        console.log('SetEventStart ext='+num)
-        //let resp = await request(baseuri+'?cmd=EventStart&deviceObject='+num+'&filter=HOOKSTATE&gsSession='+mySessionID)        
-        let resp = await request(baseuri+'?cmd=EventStart&deviceObject='+num+'&gsSession='+mySessionID)        
+        if( np>0 ) numlist += ','
+        numlist += ''+ num
+    }
+    console.log("Numlist: "+numlist)
+    let resp = await request(baseuri+'?cmd=HookSubscribe&user='+config.extension+'&devices='+numlist+'&gsSession='+mySessionID)
         if( resp.search('local="false"') > 0 ) {  //Kan gøres bedre!
             console.log("FAILED!")
         }        
-    }
+    
     setTimeout(getMsgs,200)
     console.log('Timer started')
 }
@@ -45,28 +48,16 @@ function getMsgs() {
         if(body && (body.charAt(0)==='{'))  {
             let ev = JSON.parse(body)    
 //            console.log( JSON.stringify(ev,null,2) ) 
-
             let ea = ev.events
-//            console.log("Number of events: "+ea.length)
+
             ea.forEach(e => {                
                 if( e.type) {
-                    console.log(e.deviceID+"  e.type="+e.type)
-
-                    if(e.type === 'ServiceInitiatedEvent') {
-                        let ext = e.deviceID
-                        console.log(''+ext+' Busy')
-                    }
-                    if(e.type === 'DeliveredEvent') {
-                        let ext = e.deviceID
-                        console.log(''+ext+' Ringing')
-                    }
-                    if(e.type === 'ConnectionClearedEvent') {
-                        let ext = e.deviceID
-                        console.log(''+ext+' Free')
-                    }
-                    if(e.type === 'EstablishedEvent') {
-        		        let ext = e.deviceID
-                        console.log(''+ext+' Talking')
+                    //console.log(e.deviceID+"  e.type="+e.type)
+                    if(e.type==='HookEvent') {                                            
+                     //   console.log(e.jsonEvent)
+                        e.jsonEvent.HookEvent.forEach(o=>{                        
+                            console.log("HookEvent ext:"+o.deviceID+' '+o.hook+' '+o.inout+' '+o.intext)   
+                        })
                     }
                 }                         
             });
