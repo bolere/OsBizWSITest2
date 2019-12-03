@@ -15,7 +15,7 @@ loginA()
 
 async function loginA() {        
     let resp = await request(baseuri+'?cmd=Login&gsUser='+config.extension+'&gsPass='+config.password)    
-    //console.log('resp='+resp)
+    console.log('resp='+resp)
     let jobj = xparser.parse(resp)
     mySessionID = jobj.LOGIN.ID
     console.log('mySessionID:'+mySessionID)     
@@ -24,6 +24,7 @@ async function loginA() {
 
 async function setEventStart(  ) {    
     let ant = config.maxNumbers ? config.maxNumbers : lokalnumre.numre.length
+    if( ant > lokalnumre.numre.length ) ant = lokalnumre.numre.length
     for(let np=0; np<ant; np++) {
         let num = lokalnumre.numre[np]
         console.log('SetEventStart ext='+num)
@@ -37,18 +38,18 @@ async function setEventStart(  ) {
 }
 
 function getMsgs() {        
-    request(baseuri+'/GetEvents?deviceObject=202&gsSession='+mySessionID, (err,resp,body)=>{
+    request(baseuri+'/GetEvents?deviceObject='+config.extension+'&gsSession='+mySessionID, (err,resp,body)=>{
         if( err) console.log('error:', err)
 
         if(body && (body.charAt(0)==='{'))  {
             let ev = JSON.parse(body)    
-            console.log( JSON.stringify(ev,null,2) ) 
+//            console.log( JSON.stringify(ev,null,2) ) 
 
             let ea = ev.events
       //      console.log("Number of events: "+ea.length)
             ea.forEach(e => {                
                 if( e.type) {
-                   // console.log("e.type="+e.type)
+                    console.log(e.deviceID+"  e.type="+e.type)
 
                     if(e.type === 'ServiceInitiatedEvent') {
                         let ext = e.deviceID
@@ -62,6 +63,10 @@ function getMsgs() {
                         let ext = e.deviceID
                         console.log(''+ext+' Free')
                     }
+		    if(e.type === 'EstablishedEvent') {
+		        let ext = e.deviceID
+                        console.log(''+ext+' Talking')
+		    }
                 }                         
             });
         } else {
