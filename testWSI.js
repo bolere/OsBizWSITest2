@@ -28,7 +28,8 @@ async function setEventStart(  ) {
     for(let np=0; np<ant; np++) {
         let num = lokalnumre.numre[np]
         console.log('SetEventStart ext='+num)
-        let resp = await request(baseuri+'?cmd=EventStart&deviceObject='+num+'&filter=HOOKSTATE&gsSession='+mySessionID)        
+//        let resp = await request(baseuri+'?cmd=EventStart&deviceObject='+num+'&filter=HOOKSTATE&gsSession='+mySessionID)        
+        let resp = await request(baseuri+'?cmd=EventStart&deviceObject='+num+'&gsSession='+mySessionID)        
         if( resp.search('local="false"') > 0 ) {  //Kan gøres bedre!
             console.log("FAILED!")
         }        
