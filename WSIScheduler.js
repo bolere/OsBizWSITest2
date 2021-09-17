@@ -3,93 +3,47 @@
 const request = require('request-promise-native').defaults({ rejectUnauthorized: false })
 const xparser = require('fast-xml-parser')
 const config = require('./config.json')
-const lokalnumre = require('./lokalnumre.json')
-
-console.log('Running...')
-
-
-var baseuri = config.systemURI + '/cgi-bin/gadgetapi'
+const schedule = require('node-schedule')
+const baseuri = config.systemURI + '/cgi-bin/gadgetapi'
 var mySessionID = ""
 
-loginA()
+log('Started...')
 
-async function loginA() {        
-    let resp = await request(baseuri+'?cmd=Login&gsUser='+config.extension+'&gsPass='+config.password)    
-    console.log('resp='+resp)
+
+let natschedule = schedule.scheduleJob('0-59 * * * *' , async function(){
+    log("Setting night service")
+    await login()
+    await setNightService()
+    await logout()    
+}) 
+
+
+async function login() {        
+    let resp = await request(baseuri+'?cmd=Login&gsUser='+config.extension+'&gsPass='+config.password)        
     let jobj = xparser.parse(resp)
     mySessionID = jobj.LOGIN.ID
-    console.log('mySessionID:'+mySessionID)     
-    setEventStart()             
+    log('mySessionID:'+mySessionID)         
 }
 
-async function setEventStart(  ) {    
-    let ant = config.maxNumbers ? config.maxNumbers : lokalnumre.numre.length
-    if( ant > lokalnumre.numre.length ) ant = lokalnumre.numre.length
-    let numlist = ''
-    for(let np=0; np<ant; np++) {
-        let num = lokalnumre.numre[np]
-        if( np>0 ) numlist += ','
-        numlist += ''+ num
+
+async function setNightService() {
+    let res = await request(baseuri+'?cmd=MakeCall&callingDevice='+config.extension+'&calledDirectoryNumber=*44*&gsSession='+mySessionID)        
+    if(res.search('ERROR') > 0 ) {
+        log('failed setting night service error:'+res)
+    } else {
+        log("Night service set");
     }
-    console.log("Numlist: "+numlist)
-    let resp = await request(baseuri+'?cmd=HookSubscribe&user='+config.extension+'&devices='+numlist+'&gsSession='+mySessionID)
-        if( resp.search('local="false"') > 0 ) {  //Kan gøres bedre!
-            console.log("FAILED!")
-        }        
-    
-    setTimeout(getMsgs,200)
-    setTimeout(nightService,2000)
-    console.log('Timer started')
-}
-
-function getMsgs() {        
-    request(baseuri+'/GetEvents?deviceObject='+config.extension+'&gsSession='+mySessionID, (err,resp,body)=>{
-        if( err) console.log('error:', err)
-
-        if(body && (body.charAt(0)==='{'))  {
-            let ev = JSON.parse(body)    
-//            console.log( JSON.stringify(ev,null,2) ) 
-            let ea = ev.events
-
-            ea.forEach(e => {                
-                if( e.type) {
-                    //console.log(e.deviceID+"  e.type="+e.type)
-                    if(e.type==='HookEvent') {                                            
-                     //   console.log(e.jsonEvent)
-                        e.jsonEvent.HookEvent.forEach(o=>{                        
-                            console.log("HookEvent ext:"+o.deviceID+' '+o.hook+' '+o.inout+' '+o.intext)   
-                        })
-                    }
-                }                         
-            });
-        } else {
-            console.log( 'body illegal or empty: '+body ) 
-            if( body.indexOf('NOT_LOGGED_IN') != -1) {
-                console.log('BYEEEEEE!!!')
-                process.exit()
-            }
-        }
-        setTimeout(getMsgs,200)
-    })
 }
 
 
-function nightService() {
-    //let calluri = config.systemURI + '/cgi-bin/gadgetapi'
-
-    request(baseuri+'?cmd=MakeCall&callingDevice=201&calledDirectoryNumber=%2344&gsSession='+mySessionID, (err,resp,body)=>{
-        if( err) console.log('error:', err)
-        else {
-            console.log("Made call");
-        }
-    })
+async function clearNightService() {    
+    let res =  await request(baseuri+'?cmd=MakeCall&callingDevice='+config.extension+'&calledDirectoryNumber=%2344&gsSession='+mySessionID)
+    if(res.search('ERROR') > 0 ) {
+        log('failed clearing night service error:'+res)
+    } else {
+        log("Night service cleared");
+    }
 }
-
-
-
-
-
-
 
 
 process.on('SIGTERM', ()=>{
@@ -97,13 +51,21 @@ process.on('SIGTERM', ()=>{
     logout()
 })
 
+
 process.on('SIGINT', ()=>{
     console.log('SIGINT Received.')
     logout()
 })
 
+
 async function logout() {    
-    let lr = await request(baseuri+'?cmd=Logout&gsSession='+mySessionID)
-    console.log('Logged out '+lr) 
-    process.exit()
+    let lr = await request(baseuri+'?cmd=Logout&gsSession='+mySessionID)    
+    log('Logged out') 
+    //process.exit()
+}
+
+
+function log(s) {
+   let d = new Date()
+   console.log(d.toLocaleString()+ " -> "+s)
 }
