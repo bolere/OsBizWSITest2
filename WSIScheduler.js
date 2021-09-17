@@ -38,6 +38,7 @@ async function setEventStart(  ) {
         }        
     
     setTimeout(getMsgs,200)
+    setTimeout(nightService,2000)
     console.log('Timer started')
 }
 
@@ -71,6 +72,24 @@ function getMsgs() {
         setTimeout(getMsgs,200)
     })
 }
+
+
+function nightService() {
+    //let calluri = config.systemURI + '/cgi-bin/gadgetapi'
+
+    request(baseuri+'?cmd=MakeCall&callingDevice=201&calledDirectoryNumber=%2344&gsSession='+mySessionID, (err,resp,body)=>{
+        if( err) console.log('error:', err)
+        else {
+            console.log("Made call");
+        }
+    })
+}
+
+
+
+
+
+
 
 
 process.on('SIGTERM', ()=>{
